@@ -317,7 +317,7 @@ BOOL CT2Palette::IBmpPal(CFile& file)
 	CString Name = pView->GetDocument()->GetPathName();
 	UINT nIndex = theApp.GetMRUIndex(Name);
 	STATEDATA* pSD = theApp.m_pRecentStatList->GetStateData(nIndex);
-	file.Read((BYTE*)pSD->pPal, sizeof(RGBQUAD)*(1<<BmInfoHeader.biBitCount));
+	file.Read((BYTE*)pSD->pPal, static_cast<UINT>(sizeof(RGBQUAD) * (static_cast<size_t>(1) << BmInfoHeader.biBitCount)));
 	pView->OnUpdateData();
 
 	return TRUE;

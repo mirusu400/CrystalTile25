@@ -1,0 +1,110 @@
+name: Release
+
+on:
+  release:
+    types:
+      - published
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-upload:
+    runs-on: windows-2022
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Build Release x86
+        shell: pwsh
+        run: msbuild CrystalTile2.sln /m /p:Configuration=Release /p:Platform=x86
+
+      - name: Build Release x64
+        shell: pwsh
+        run: msbuild CrystalTile2.sln /m /p:Configuration=Release /p:Platform=x64
+
+      - name: Create release archives
+        shell: pwsh
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+
+          $root = $PWD.Path
+          $artifactsDir = Join-Path $root 'artifacts'
+          New-Item -ItemType Directory -Path $artifactsDir -Force | Out-Null
+
+          $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
+          $vsPath = & $vswhere -latest -products * -requires Microsoft.Component.MSBuild -property installationPath
+          if (-not $vsPath) {
+            throw 'Visual Studio installation path not found.'
+          }
+
+          $redistRoot = Join-Path $vsPath 'VC\Redist\MSVC'
+
+          function Resolve-Redist([string]$fileName) {
+            $preferred = Join-Path $redistRoot "v143\$fileName"
+            if (Test-Path $preferred) {
+              return $preferred
+            }
+
+            $candidate = Get-ChildItem $redistRoot -Directory |
+              Sort-Object Name -Descending |
+              ForEach-Object { Join-Path $_.FullName $fileName } |
+              Where-Object { Test-Path $_ } |
+              Select-Object -First 1
+
+            if (-not $candidate) {
+              throw "Could not find $fileName under $redistRoot"
+            }
+
+            return $candidate
+          }
+
+          $targets = @(
+            @{
+              Arch = 'x86'
+              BuildOutput = Join-Path $root 'Release\CrystalTile2.exe'
+              Redist = Resolve-Redist 'vc_redist.x86.exe'
+            },
+            @{
+              Arch = 'x64'
+              BuildOutput = Join-Path $root 'x64\Release\CrystalTile2.exe'
+              Redist = Resolve-Redist 'vc_redist.x64.exe'
+            }
+          )
+
+          foreach ($target in $targets) {
+            if (-not (Test-Path $target.BuildOutput)) {
+              throw "Missing build output: $($target.BuildOutput)"
+            }
+
+            $stageDir = Join-Path $artifactsDir "CrystalTile2-$env:RELEASE_TAG-$($target.Arch)"
+            $zipPath = Join-Path $artifactsDir "CrystalTile2-$env:RELEASE_TAG-$($target.Arch).zip"
+
+            Remove-Item $stageDir -Recurse -Force -ErrorAction SilentlyContinue
+            Remove-Item $zipPath -Force -ErrorAction SilentlyContinue
+
+            New-Item -ItemType Directory -Path $stageDir | Out-Null
+
+            Copy-Item $target.BuildOutput (Join-Path $stageDir 'CrystalTile2.exe')
+            Copy-Item $target.Redist (Join-Path $stageDir ([System.IO.Path]::GetFileName($target.Redist)))
+            Copy-Item (Join-Path $root 'LICENSE.txt') (Join-Path $stageDir 'LICENSE.txt')
+
+            Compress-Archive -Path (Join-Path $stageDir '*') -DestinationPath $zipPath
+          }
+
+      - name: Upload archives to release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          gh release upload $env:RELEASE_TAG `
+            "artifacts/CrystalTile2-$env:RELEASE_TAG-x86.zip" `
+            "artifacts/CrystalTile2-$env:RELEASE_TAG-x64.zip" `
+            --clobber

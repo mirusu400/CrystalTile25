@@ -106,7 +106,7 @@ BOOL CT2TreeBar::Create(CWnd* pParentWnd, UINT nStyle, UINT nID)
 		return FALSE;
 
 	m_hBrush = CreateSolidBrush(GetSysColor(COLOR_BTNFACE));
-	SetClassLongPtr(m_hWnd, GCL_HBRBACKGROUND, (LONG)(UINT_PTR)m_hBrush);
+	SetClassLongPtr(m_hWnd, GCLP_HBRBACKGROUND, reinterpret_cast<LONG_PTR>(m_hBrush));
 
 	SetDlgCtrlID(nID);
 
@@ -232,7 +232,7 @@ BOOL CT2TreeBar::PreTranslateMessage(MSG* pMsg)
 				rc.top = rc.bottom-4;
 				if(PtInRect(&rc, pMsg->pt))
 				{
-					SetCursor(LoadCursor(NULL, MAKEINTRESOURCE(IDC_SIZENS)));
+					SetCursor(LoadCursor(NULL, IDC_SIZENS));
 					m_Tree.SendMessage(WM_NCLBUTTONDOWN, HTBOTTOM, MAKELPARAM(pMsg->pt.x,pMsg->pt.y));
 					Invalidate(FALSE);
 
@@ -248,7 +248,7 @@ BOOL CT2TreeBar::PreTranslateMessage(MSG* pMsg)
 				rc.top = rc.bottom-4;
 				if(PtInRect(&rc, pMsg->pt))
 				{
-					SetCursor(LoadCursor(NULL, MAKEINTRESOURCE(IDC_SIZENS)));
+					SetCursor(LoadCursor(NULL, IDC_SIZENS));
 					m_MyRes.SendMessage(WM_NCLBUTTONDOWN, HTBOTTOM, MAKELPARAM(pMsg->pt.x,pMsg->pt.y));
 					Invalidate(FALSE);
 
@@ -314,14 +314,14 @@ BOOL CT2TreeBar::PreTranslateMessage(MSG* pMsg)
 				m_Tree.GetWindowRect(&rc);
 				rc.top = rc.bottom-4;
 				if(PtInRect(&rc, pMsg->pt))
-					SetCursor(LoadCursor(NULL, MAKEINTRESOURCE(IDC_SIZENS)));
+					SetCursor(LoadCursor(NULL, IDC_SIZENS));
 			}else
 			if(pMsg->hwnd==m_MyRes.m_hWnd)
 			{
 				m_MyRes.GetWindowRect(&rc);
 				rc.top = rc.bottom-4;
 				if(PtInRect(&rc, pMsg->pt))
-					SetCursor(LoadCursor(NULL, MAKEINTRESOURCE(IDC_SIZENS)));
+					SetCursor(LoadCursor(NULL, IDC_SIZENS));
 			}
 		}break;
 
@@ -562,7 +562,7 @@ int CT2TreeBar::CanSplitte(POINT pt)
 	rc.left = rc.right-TB_SPLITTE_S;
 	if(PtInRect(&rc, pt))
 	{
-		SetCursor(LoadCursor(NULL, MAKEINTRESOURCE(IDC_SIZEWE)));
+		SetCursor(LoadCursor(NULL, IDC_SIZEWE));
 		return TB_SPLITTE_R;
 	}
 
@@ -570,7 +570,7 @@ int CT2TreeBar::CanSplitte(POINT pt)
 	rc.right = rc.left+TB_SPLITTE_S;
 	if(PtInRect(&rc, pt))
 	{
-		SetCursor(LoadCursor(NULL, MAKEINTRESOURCE(IDC_SIZEWE)));
+		SetCursor(LoadCursor(NULL, IDC_SIZEWE));
 		return TB_SPLITTE_L;
 	}
 
@@ -578,7 +578,7 @@ int CT2TreeBar::CanSplitte(POINT pt)
 	rc.top = rc.bottom-TB_SPLITTE_S;
 	if(PtInRect(&rc, pt))
 	{
-		SetCursor(LoadCursor(NULL, MAKEINTRESOURCE(IDC_SIZENS)));
+		SetCursor(LoadCursor(NULL, IDC_SIZENS));
 		return TB_SPLITTE_B;
 	}
 
@@ -586,7 +586,7 @@ int CT2TreeBar::CanSplitte(POINT pt)
 	rc.bottom = rc.top+TB_SPLITTE_S;
 	if(PtInRect(&rc, pt))
 	{
-		SetCursor(LoadCursor(NULL, MAKEINTRESOURCE(IDC_SIZENS)));
+		SetCursor(LoadCursor(NULL, IDC_SIZENS));
 		return TB_SPLITTE_T;
 	}
 

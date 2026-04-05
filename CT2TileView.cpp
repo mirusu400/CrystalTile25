@@ -244,7 +244,7 @@ void CT2TileView::SetBits()
 	BYTE* pTile;
 	BYTE* pRom=pDoc->m_pRom+m_nOffset;
 	BYTE* pEnd=(pDoc->m_pRom+pDoc->m_nRomSize);
-	BYTE* pPixel, nPixel2, nPixel3, nPixel4;
+	BYTE* pPixel, nPixel2;
 	int nTilePixelCount = m_nDrawMode>=CT2_DM_MAP?8*8 : m_nWidth*m_nHeight;
 	//size of per tile
 
@@ -353,13 +353,17 @@ void CT2TileView::SetBits()
 				// ((nTilePixelNO+nTileNO*nWidth*nHeight)/3)*3
 				// nPixel=( nPixel>> (5-nTilePixelNO2%m_nBytePixelCount*m_nBitCount));
 				// pPixel=(pTile+(nTilePixelNO2)*8)/3;
-				//pPixel=(BYTE *)(((UINT)pTile*8+nTilePixelNO2*3)/8);
-				pPixel=(BYTE *)(((UINT)pTile*8+nTilePixelNO2*3)/8);
-				nPixel2= *pPixel;
-				nPixel= *pPixel+1;
-				nPixel |= nPixel2 << 8;
-				//nPixel=( nPixel>> (5-nTilePixelNO2%m_nBytePixelCount*m_nBitCount));
-				nPixel = (nPixel >> (8 - ((UINT)pTile + 8 + (nTilePixelNO2 + 1) * 3 ) % 8));
+                //pPixel=(BYTE *)(((UINT)pTile*8+nTilePixelNO2*3)/8);
+                {
+                    const UINT nBitOffset = static_cast<UINT>(nTilePixelNO2) * 3;
+                    pPixel = pTile + nBitOffset / 8;
+                    if(pPixel + 1 >= pEnd) return;
+                    nPixel2 = *pPixel;
+                    nPixel = *(pPixel + 1);
+                    nPixel |= nPixel2 << 8;
+                    //nPixel=( nPixel>> (5-nTilePixelNO2%m_nBytePixelCount*m_nBitCount));
+                    nPixel = (nPixel >> (8 - ((nBitOffset + 3) % 8)));
+                }
 				break;
 			
 				break;
@@ -1542,7 +1546,7 @@ void CT2TileView::OnMouseMove(UINT nFlags, CPoint point)
 		if(m_hImportBmp)
 		{
 			m_ptImport = point-m_ptMove;
-			SetCursor(LoadCursor(NULL, MAKEINTRESOURCE(IDC_SIZEALL)));
+			SetCursor(LoadCursor(NULL, IDC_SIZEALL));
 			Invalidate(FALSE);
 		}else
 		if( //(!m_bShow) &&
@@ -1561,7 +1565,7 @@ void CT2TileView::OnMouseMove(UINT nFlags, CPoint point)
 			m_ptImport.x+bm.bmWidth*m_nScale/100,
 			m_ptImport.y+bm.bmHeight*m_nScale/100);
 		if(rc.PtInRect(point))
-			SetCursor(LoadCursor(NULL, MAKEINTRESOURCE(IDC_SIZEALL)));
+			SetCursor(LoadCursor(NULL, IDC_SIZEALL));
 	}
 	CT2View::OnMouseMove(nFlags, point);
 }
